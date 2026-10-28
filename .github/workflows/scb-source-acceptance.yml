@@ -1,0 +1,25 @@
+name: SCB source acceptance
+
+on:
+  push:
+    branches:
+      - sc/chanbackup-fault-native-20261028
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  chanbackup-fault:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.3'
+          cache: false
+      - name: Genuine LND encrypted MultiFile regression
+        # This is a negative control. A failed assertion confirms the source fault.
+        run: |
+          go test ./chanbackup -run '^TestSubSwapperCloseFailureCannotResurrectDiskBackup$' -count=1 -timeout=3m -v
