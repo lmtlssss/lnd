@@ -1,0 +1,49 @@
+name: Owner container security candidates
+on:
+  push:
+    branches: [security/container-candidates-20261103]
+    paths:
+      - ".github/workflows/owner-container-candidates.yml"
+      - "container-candidates/**"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    if: github.repository == 'lmtlssss/lnd'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - component: lnd
+            repository: lightningnetwork/lnd
+            source_commit: ac3a47f1a7cf082c11c23b801afac62b59cba836
+          - component: albyhub
+            repository: getAlby/hub
+            source_commit: c401324c065d50aea2a8b61006b6bb03b3ef776c
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          repository: ${{ matrix.repository }}
+          ref: ${{ matrix.source_commit }}
+          path: source
+          persist-credentials: false
+      - name: Build, scan and archive
+        env:
+          COMPONENT: ${{ matrix.component }}
+          SOURCE_REPOSITORY: ${{ matrix.repository }}
+          SOURCE_COMMIT: ${{ matrix.source_commit }}
+        run: bash container-candidates/build.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: ${{ matrix.component }}-runtime-20261103
+          path: artifact/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
